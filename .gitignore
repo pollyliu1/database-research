@@ -1,1 +1,2 @@
-kvstore/target/
+target
+target [0-9]*

@@ -30,8 +30,8 @@ fn main() {
     let db = init_db(db_path);
 
     // PUT
-    put(&db, "key1", "value1");
-    println!("Inserted key1 with value1");
+    put(&db, "key1", "value2");
+    println!("Inserted key1 with value2");
 
     // GET
     match get(&db, "key1") {
