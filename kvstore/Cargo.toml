@@ -1,0 +1,10 @@
+[package]
+name = "kvstore"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+rocksdb = "0.14"
+
+[build-dependencies]
+bindgen = "0.64" # fix mac issues with C/C++ binding
