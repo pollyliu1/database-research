@@ -1,0 +1,10 @@
+version: '3.8'
+services:
+  kvstore:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - .:/app
+      - /app/target # for cache persistence
+    command: ./target/release/kvstore_project
