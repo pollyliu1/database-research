@@ -1,4 +1,4 @@
-use rocksdb::{DB, Options};
+use rust_rocksdb::{DB, Options};
 
 fn init_db(path: &str) -> DB {
     let mut options = Options::default();
