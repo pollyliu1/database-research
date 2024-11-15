@@ -1,0 +1,2 @@
+[target.'cfg(target_os = "macos")']
+RUSTFLAGS = "-L/usr/local/lib"
