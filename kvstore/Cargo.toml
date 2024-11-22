@@ -9,10 +9,16 @@ tonic = "0.9" # gRPC library for Rust
 prost = "0.11" # Protobuf support
 rust-rocksdb = "0.33.0"
 tokio = { version = "1", features = ["full"] } # Async runtime
+seahash = "4.1.0" # hash function
+clap = { version = "4.0", features = ["derive"] } # for generic N number of servers
 
 [build-dependencies]
 bindgen = "0.64" # fix mac issues with C/C++ binding
 tonic-build = "0.9"
+
+[[bin]]
+name = "kvstore"
+path = "src/main.rs"
 
 [[bin]]
 name = "server"
