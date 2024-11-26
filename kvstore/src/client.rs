@@ -12,25 +12,6 @@ pub mod kvstore {
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut client = KvStoreClient::connect("http://[::1]:50051").await?;
 
-    // // PUT
-    // let response = client.put(PutRequest {
-    //     key: "key1".into(),
-    //     value: "value1".into(),
-    // }).await?;
-    // println!("PUT Response: {:?}", response);
-    //
-    // // GET
-    // let response = client.get(GetRequest {
-    //     key: "key1".into(),
-    // }).await?;
-    // println!("GET Response: {:?}", response);
-    //
-    // // DELETE
-    // let response = client.delete(DeleteRequest {
-    //     key: "key1".into(),
-    // }).await?;
-    // println!("DELETE Response: {:?}", response);
-
     let num_transactions = 10_000;
 
     println!("Benchmarking Read-heavy Transactions...");
@@ -53,6 +34,10 @@ async fn benchmark_transactions(
 ) -> Result<(), Box<dyn std::error::Error>> {
     let start = Instant::now();
     let mut rng = rand::thread_rng();
+    let mut data_store = HashMap::new(); // Local data store for verification
+
+    let mut correct_gets = 0;
+    let mut total_gets = 0;
 
     for _ in 0..num_transactions {
         let mut transaction = Vec::new();
@@ -70,7 +55,9 @@ async fn benchmark_transactions(
         }
 
         // Execute the transaction
-        execute_transaction(client, transaction).await?;
+        let (correct, total) = execute_transaction(client, transaction, &mut data_store).await?;
+        correct_gets += correct;
+        total_gets += total;
     }
 
     let duration = start.elapsed();
@@ -80,30 +67,52 @@ async fn benchmark_transactions(
         duration, throughput
     );
 
+    if total_gets > 0 {
+        println!(
+            "GET Accuracy: {:.2}%",
+            (correct_gets as f64 / total_gets as f64) * 100.0
+        );
+    }
+
     Ok(())
 }
 
 async fn execute_transaction(
     client: &mut KvStoreClient<tonic::transport::Channel>,
     transaction: Vec<&str>,
-) -> Result<(), Box<dyn std::error::Error>> {
+    data_store: &mut HashMap<String, String>,
+) -> Result<(usize, usize), Box<dyn std::error::Error>> {
+    let mut correct_gets = 0;
+    let mut total_gets = 0;
+
     for op in transaction {
         match op {
             "GET" => {
-                let key = "key1".to_string(); // Example key
-                client.get(GetRequest { key }).await?;
+                let key = format!("key{}", rand::thread_rng().gen_range(0..10000));
+                let response = client.get(GetRequest { key: key.clone() }).await?;
+                let value = response.into_inner().value;
+
+                if let Some(expected_value) = data_store.get(&key) {
+                    if *expected_value == value {
+                        correct_gets += 1; // Correct GET
+                    }
+                }
+                total_gets += 1; // Total GET attempts
             }
             "PUT" => {
-                let key = "key1".to_string();
-                let value = "value1".to_string();
-                client.put(PutRequest { key, value }).await?;
+                let key = format!("key{}", rand::thread_rng().gen_range(0..10000));
+                let value = format!("value{}", rand::thread_rng().gen_range(0..10000));
+                client.put(PutRequest { key: key.clone(), value: value.clone() }).await?;
+                data_store.insert(key, value); // Update local store
             }
             "DELETE" => {
-                let key = "key1".to_string();
-                client.delete(DeleteRequest { key }).await?;
+                let key = format!("key{}", rand::thread_rng().gen_range(0..10000));
+                client.delete(DeleteRequest { key: key.clone() }).await?;
+                data_store.remove(&key); // Remove from local store
             }
             _ => unreachable!(),
         }
     }
-    Ok(())
+
+    Ok((correct_gets, total_gets))
 }
