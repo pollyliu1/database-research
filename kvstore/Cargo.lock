@@ -620,6 +620,7 @@ dependencies = [
  "bindgen 0.64.0",
  "clap",
  "prost",
+ "rand",
  "rust-rocksdb",
  "seahash",
  "tokio",
